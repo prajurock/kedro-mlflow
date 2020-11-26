@@ -45,8 +45,9 @@ I strongly recommend to use ``conda`` (a package manager) to create an environme
 
 The documentation contains:
 
-- [A "hello world" example](https://kedro-mlflow.readthedocs.io/en/latest/source/02_hello_world_example/index.html) which demonstrates how you to **setup your project**, **version parameters** and **datasets**, and browse your runs in the UI.
-- A more [detailed tutorial](https://kedro-mlflow.readthedocs.io/en/latest/source/03_tutorial/index.html) to show more advanced features (mlflow configuration through the plugin, package and serve a kedro ``Pipeline``...)
+- [An end to end "hello world" example](https://kedro-mlflow.readthedocs.io/en/latest/source/03_getting_started/index.html) which demonstrates how you to **setup your project**, **version parameters** and **datasets**, and browse your runs in the UI.
+- A section for [advanced machine learning versioning](https://kedro-mlflow.readthedocs.io/en/latest/source/04_experimentation_tracking/index.html) to show more advanced features (mlflow configuration through the plugin, package and serve a kedro ``Pipeline``...)
+- A section to demonstrate how to use `kedro-mlflow` as a [machine learning framework](https://kedro-mlflow.readthedocs.io/en/latest/source/05_framework_ml/index.html) to deliver production ready pipelines and serve them.
 
 Some frequently asked questions on more advanced features:
 
