@@ -40,7 +40,7 @@ Since it is a more mature industry, efficient tools exists to manage these items
 - parameters
 - data
 
-As ML is much less mature field, efficient tooling to adress these items are very recent and not completely standardized yet (e.g. Mlflow to track parameters, DVC to version data, `great-expectations` to monitor data which go through your pipelines, `tensorboard` to monitor your model metrics...)
+As ML is a much less mature field, efficient tooling to adress these items are very recent and not completely standardized yet (e.g. Mlflow to track parameters, DVC to version data, `great-expectations` to monitor data which go through your pipelines, `tensorboard` to monitor your model metrics...)
 
 > **Mlflow is one of the most mature tool to manage these new moving parts.**
 
@@ -63,7 +63,7 @@ However in ML development, the workflow is much more iterative and may looklike 
 - you retrain the model, eventually do some parameter tuning
 - you merge your code on the main branch to share your work
 
-If you need to modify the model later (do a different preprocessing, change the model type...), you do not **add** code to the codebase, you **modify** the existing code. This makes unit testing much harder because the desired features changed over time.
+If you need to modify the model later (do a different preprocessing, change the model type...), you do not **add** code to the codebase, you **modify** the existing code. This makes unit testing much harder because the desired features change over time.
 
 The other difficulty when testing machine learning applications is it hard to test for regression, since the model depends on underlying data and the chosen metrics. If a new model performs slightly better or worse than the previous one ont the same dataset, it may be due to randomness and not to code quality. If the metric varies on a different dataset, it is even harder to know if it is due to code quality or to innate randomness.
 
@@ -80,38 +80,43 @@ We will focus on machine learning *development* lifecycle. As a consequence, the
 - Orchestration
 - Issues related to infrastructure (the 3 first items of above list: scalability and cost control, speed, disponibility and resilience)
 
-### Issue addressed 1: The training process is poorly reproducible
+### Issue 1: The training process is poorly reproducible
 
-A ML project contains a lot of moving parts:
+The main reason which explains why training is hard to reproduce is the iterative process. Data scientists launch several times the same run with slightly different parameters / data / preprocessing. If they rely on their memory to compare these runs, they will likely struggle to remember what was the best one.
 
-- code
-- parameters
-- data
-- environment (packages versions...)
-- infrastructure (build on Windows, deploy on linux)
+> **`kedro-mlflow` offers automatic parameters versioning** when a pipeline is ran to easily link a model to its training parameters.
 
-Parameters and data are not moving parts of software traditional development, so the traditional tools to manage software development lifecycle tools are not sufficient to address these problems. The other difficulty is that standard
+Note that there is also a lot of "innate" randomness in ML pipelines and if a seed is not set explictly as a parameter , the run will likely not be reproducible (separation train/test/validation, moving underlying data sources, random initialisation for optimizers, random split for bootstrap...).
 
-- lots of randomness (seed for each model, separation train/test/validation, moving underlying data sources -> non immutable data...)
+#### The data scientist and stakeholders focus on training
 
-- process non linear : test, show result to stakeholder, remove one varibale, add another, retrain...
+While building the ML model, the inference pipeline is often completely ignored by the data scientist.
+
+The best example are Kaggle competitions where a very common workflow is the following:
+
+- merge the training and the test data at the beginning of their script
+- do the preprocessing on the entire dataset
+- resplit just before training the model
+- train the model on training data
+- predict on test data
+- anayze their metrics, finetune their hyper parameters
+- submit their predictions as data (i.e. as a file) to Kaggle
+
+The very important issue which arises with such a workflow is that **you completely ignore the non reproducibility which arises from the preprocessing (encoding, randomness...)**.  Most Kaggle solutions are never tested on an end to end basis, i.e. by running the inference pipeline from the test data input file to the predictions file. This facilitates very bad coding practices and teaches beginner data scientists bad software engineering practice.
+
+`kedro-mlflow` enable to log the inference pipeline as a Mlflow Model (through a `KedroPipelineModel` class) to ensure that you deploy the inference pipeline as a whole.
+
+#### Inference and training are entirely decoupled
+
+As stated previous paragraph,
+
+- nobody cares about inference before deployment (cf previous paragraph)
+- This is where difficulty arise for the data scientist
 
 As a consequence, data scientists deploy models (trained) rather than pipelines, e.g. a zip and a very long & obfuscated script which do a lot of poorly related things (both data visualisation, training, inference, extra statistical analysis...)
 
 This makes everything 1) very hard to modify 2) very hard to correct 3) very long to deploy beacause there are a lot of manual tests
 
-#### The data scientist and stakeholders focus on training
-
-- best example is Kaggle: you do not deploy an inference pipeline, but only the predictions, which means that you completely ignore the non reproducibility which arises from the preprocessing (encoding, code bugs...)
-
-- schema: preprocess test and train simultaneously train, then analyze predictions on test, never form the beginning
-
-=> many data scientists have poor CS abilities (because it is not what they were trained for)
-
-#### Inference and training are entirely decoupled
-
-- nobody cares about inference before deployment (cf previous paragraph)
-- This is where difficulty arise for the data scientist
 
 #### data scientists do not deliver pipelines, and consequently do not handle business objects
 
