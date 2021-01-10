@@ -17,7 +17,7 @@ def _write_yaml(filepath, config):
 def test_get_mlflow_config(mocker, tmp_path, config_dir):
     # config_with_base_mlflow_conf is a pytest.fixture in conftest
     mocker.patch("logging.config.dictConfig")
-    mocker.patch("kedro_mlflow.utils._is_kedro_project", return_value=True)
+    mocker.patch("kedro.framework.startup._is_project", return_value=True)
 
     _write_yaml(
         tmp_path / "conf" / "base" / "mlflow.yml",

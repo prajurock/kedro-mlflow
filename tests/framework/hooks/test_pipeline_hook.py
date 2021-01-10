@@ -262,7 +262,7 @@ def test_mlflow_pipeline_hook_with_different_pipeline_types(
     dummy_mlflow_conf,
 ):
     # config_with_base_mlflow_conf is a conftest fixture
-    mocker.patch("kedro_mlflow.utils._is_kedro_project", return_value=True)
+    mocker.patch("kedro.framework.startup._is_project", return_value=True)
     monkeypatch.chdir(tmp_path)
     pipeline_hook = MlflowPipelineHook()
     runner = SequentialRunner()
@@ -339,7 +339,7 @@ def test_mlflow_pipeline_hook_with_copy_mode(
     expected,
 ):
     # config_with_base_mlflow_conf is a conftest fixture
-    mocker.patch("kedro_mlflow.utils._is_kedro_project", return_value=True)
+    mocker.patch("kedro.framework.startup._is_project", return_value=True)
     monkeypatch.chdir(tmp_path)
     pipeline_hook = MlflowPipelineHook()
     runner = SequentialRunner()
@@ -397,7 +397,7 @@ def test_mlflow_pipeline_hook_metrics_with_run_id(
     dummy_mlflow_conf,
 ):
     # config_with_base_mlflow_conf is a conftest fixture
-    mocker.patch("kedro_mlflow.utils._is_kedro_project", return_value=True)
+    mocker.patch("kedro.framework.startup._is_project", return_value=True)
     monkeypatch.chdir(tmp_path)
 
     context = load_context(tmp_path)
@@ -489,7 +489,7 @@ def test_mlflow_pipeline_hook_with_pipeline_ml_signature(
     expected_signature,
 ):
     # config_with_base_mlflow_conf is a conftest fixture
-    mocker.patch("kedro_mlflow.utils._is_kedro_project", return_value=True)
+    mocker.patch("kedro.framework.startup._is_project", return_value=True)
     monkeypatch.chdir(tmp_path)
     pipeline_hook = MlflowPipelineHook()
     runner = SequentialRunner()
@@ -576,7 +576,7 @@ def test_on_pipeline_error(tmp_path, config_dir, mocker):
     # Disable logging.config.dictConfig in KedroContext._setup_logging as
     # it changes logging.config and affects other unit tests
     mocker.patch("logging.config.dictConfig")
-    mocker.patch("kedro_mlflow.utils._is_kedro_project", return_value=True)
+    mocker.patch("kedro.framework.startup._is_project", return_value=True)
 
     # create the extra mlflow.ymlconfig file for the plugin
     def _write_yaml(filepath, config):
@@ -615,7 +615,7 @@ def test_on_pipeline_error(tmp_path, config_dir, mocker):
             }
 
     with pytest.raises(ValueError):
-        failing_context = DummyContextWithHook(tmp_path.as_posix())
+        failing_context = DummyContextWithHook("fake_package", tmp_path.as_posix())
         failing_context.run()
 
     # the run we want is the last one in Default experiment

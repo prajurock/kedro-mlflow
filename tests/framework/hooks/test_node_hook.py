@@ -150,7 +150,7 @@ def test_node_hook_logging(
 ):
 
     mocker.patch("logging.config.dictConfig")
-    mocker.patch("kedro_mlflow.utils._is_kedro_project", return_value=True)
+    mocker.patch("kedro.framework.startup._is_project", return_value=True)
     monkeypatch.chdir(tmp_path)
     # config = KedroMlflowConfig(
     #     project_path=tmp_path,
@@ -207,7 +207,7 @@ def test_node_hook_logging_below_limit_all_strategy(
     tmp_path, config_dir, dummy_run_params, dummy_node, param_length, strategy
 ):
 
-    # mocker.patch("kedro_mlflow.utils._is_kedro_project", return_value=True)
+    # mocker.patch("kedro.framework.startup._is_project", return_value=True)
 
     _write_yaml(
         tmp_path / "conf" / "base" / "mlflow.yml",
@@ -250,7 +250,7 @@ def test_node_hook_logging_above_limit_truncate_strategy(
     tmp_path, config_dir, dummy_run_params, dummy_node, param_length
 ):
 
-    # mocker.patch("kedro_mlflow.utils._is_kedro_project", return_value=True)
+    # mocker.patch("kedro.framework.startup._is_project", return_value=True)
 
     _write_yaml(
         tmp_path / "conf" / "base" / "mlflow.yml",
@@ -293,7 +293,7 @@ def test_node_hook_logging_above_limit_fail_strategy(
     tmp_path, config_dir, dummy_run_params, dummy_node, param_length
 ):
 
-    # mocker.patch("kedro_mlflow.utils._is_kedro_project", return_value=True)
+    # mocker.patch("kedro.framework.startup._is_project", return_value=True)
 
     _write_yaml(
         tmp_path / "conf" / "base" / "mlflow.yml",
@@ -342,7 +342,7 @@ def test_node_hook_logging_above_limit_tag_strategy(
     tmp_path, config_dir, dummy_run_params, dummy_node, param_length
 ):
 
-    # mocker.patch("kedro_mlflow.utils._is_kedro_project", return_value=True)
+    # mocker.patch("kedro.framework.startup._is_project", return_value=True)
 
     _write_yaml(
         tmp_path / "conf" / "base" / "mlflow.yml",

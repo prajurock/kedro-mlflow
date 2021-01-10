@@ -164,7 +164,7 @@ def dummy_context(tmp_path, config_dir, mocker):
     # Disable logging.config.dictConfig in KedroContext._setup_logging as
     # it changes logging.config and affects other unit tests
     mocker.patch("logging.config.dictConfig")
-    dummy_context = DummyContext(tmp_path.as_posix())
+    dummy_context = DummyContext("fake_package", tmp_path.as_posix())
     return dummy_context
 
 

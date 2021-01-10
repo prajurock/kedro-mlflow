@@ -3,7 +3,7 @@ import os
 import mlflow
 import pytest
 import yaml
-from kedro.context import load_context
+from kedro.framework.context import load_context
 from mlflow.tracking import MlflowClient
 
 from kedro_mlflow.framework.context.config import (
@@ -80,7 +80,7 @@ def test_kedro_mlflow_config_new_experiment_does_not_exists(
     mocker, tmp_path, config_dir
 ):
     # create a ".kedro.yml" file to identify "tmp_path" as the root of a kedro project
-    mocker.patch("kedro_mlflow.utils._is_kedro_project", return_value=True)
+    mocker.patch("kedro.framework.startup._is_project", return_value=True)
 
     config = KedroMlflowConfig(
         project_path=tmp_path,
@@ -94,7 +94,7 @@ def test_kedro_mlflow_config_new_experiment_does_not_exists(
 
 def test_kedro_mlflow_config_experiment_exists(mocker, tmp_path, config_dir):
     # create a ".kedro.yml" file to identify "tmp_path" as the root of a kedro project
-    mocker.patch("kedro_mlflow.utils._is_kedro_project", return_value=True)
+    mocker.patch("kedro.framework.startup._is_project", return_value=True)
 
     # create an experiment with the same name
     mlflow_tracking_uri = (tmp_path / "mlruns").as_uri()
@@ -111,7 +111,7 @@ def test_kedro_mlflow_config_experiment_exists(mocker, tmp_path, config_dir):
 
 def test_kedro_mlflow_config_experiment_was_deleted(mocker, tmp_path, config_dir):
     # create a ".kedro.yml" file to identify "tmp_path" as the root of a kedro project
-    mocker.patch("kedro_mlflow.utils._is_kedro_project", lambda x: True)
+    mocker.patch("kedro.framework.startup._is_project", lambda x: True)
 
     # create an experiment with the same name and then delete it
     mlflow_tracking_uri = (tmp_path / "mlruns").as_uri()
@@ -134,7 +134,7 @@ def test_kedro_mlflow_config_experiment_was_deleted(mocker, tmp_path, config_dir
 
 def test_kedro_mlflow_config_setup_set_tracking_uri(mocker, tmp_path, config_dir):
     # create a ".kedro.yml" file to identify "tmp_path" as the root of a kedro project
-    mocker.patch("kedro_mlflow.utils._is_kedro_project", lambda x: True)
+    mocker.patch("kedro.framework.startup._is_project", lambda x: True)
 
     # create an experiment with the same name and then delete it
     mlflow_tracking_uri = (tmp_path / "awesome_tracking").as_uri()
@@ -153,7 +153,7 @@ def test_kedro_mlflow_config_setup_set_tracking_uri(mocker, tmp_path, config_dir
 
 def test_kedro_mlflow_config_setup_export_credentials(mocker, tmp_path, config_dir):
     # create a ".kedro.yml" file to identify "tmp_path" as the root of a kedro project
-    mocker.patch("kedro_mlflow.utils._is_kedro_project", lambda x: True)
+    mocker.patch("kedro.framework.startup._is_project", lambda x: True)
 
     (tmp_path / "conf/base/credentials.yml").write_text(
         yaml.dump(dict(my_mlflow_creds=dict(fake_mlflow_cred="my_fake_cred")))
@@ -177,7 +177,7 @@ def test_kedro_mlflow_config_setup_tracking_priority(mocker, tmp_path, config_di
         config_dir ([type]): [description]
     """
     # create a ".kedro.yml" file to identify "tmp_path" as the root of a kedro project
-    mocker.patch("kedro_mlflow.utils._is_kedro_project", lambda x: True)
+    mocker.patch("kedro.framework.startup._is_project", lambda x: True)
 
     (tmp_path / "conf/base/credentials.yml").write_text(
         yaml.dump(dict(my_mlflow_creds=dict(mlflow_tracking_uri="mlruns2")))
@@ -203,7 +203,7 @@ def test_kedro_mlflow_config_setup_tracking_priority(mocker, tmp_path, config_di
     ],
 )
 def test_kedro_mlflow_config_validate_uri_local(mocker, tmp_path, uri):
-    mocker.patch("kedro_mlflow.utils._is_kedro_project", return_value=True)
+    mocker.patch("kedro.framework.startup._is_project", return_value=True)
     mocker.patch("mlflow.tracking.MlflowClient", return_value=None)
     mocker.patch(
         "kedro_mlflow.framework.context.config.KedroMlflowConfig._get_or_create_experiment",
@@ -215,7 +215,7 @@ def test_kedro_mlflow_config_validate_uri_local(mocker, tmp_path, uri):
 
 
 def test_from_dict_to_dict_idempotent(mocker, tmp_path):
-    mocker.patch("kedro_mlflow.utils._is_kedro_project", return_value=True)
+    mocker.patch("kedro.framework.startup._is_project", return_value=True)
     mocker.patch("mlflow.tracking.MlflowClient", return_value=None)
     mocker.patch(
         "kedro_mlflow.framework.context.config.KedroMlflowConfig._get_or_create_experiment",
