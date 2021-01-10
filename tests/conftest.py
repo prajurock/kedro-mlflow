@@ -4,6 +4,7 @@ from typing import Dict
 
 import mlflow
 import pytest
+import toml
 import yaml
 
 
@@ -19,6 +20,12 @@ def _write_yaml(filepath: Path, config: Dict):
     filepath.parent.mkdir(parents=True, exist_ok=True)
     yaml_str = yaml.dump(config)
     filepath.write_text(yaml_str)
+
+
+def _write_toml(filepath: Path, config: Dict):
+    filepath.parent.mkdir(parents=True, exist_ok=True)
+    toml_str = toml.dumps(config)
+    filepath.write_text(toml_str)
 
 
 def _get_local_logging_config():
@@ -60,23 +67,24 @@ def config_dir(tmp_path):
         logging = tmp_path / "conf" / env / "logging.yml"
         parameters = tmp_path / "conf" / env / "parameters.yml"
         globals_yaml = tmp_path / "conf" / env / "globals.yml"
-        kedro_yaml = tmp_path / ".kedro.yml"
+        pyproject_toml = tmp_path / "pyproject.toml"
         _write_yaml(catalog, dict())
         _write_yaml(parameters, dict())
         _write_yaml(globals_yaml, dict())
         _write_yaml(credentials, dict())
         _write_yaml(logging, _get_local_logging_config()),
 
-    _write_yaml(
-        kedro_yaml,
-        dict(
-            {
-                "context_path": "dummy_package.run.ProjectContext",
-                "project_name": "dummy_package",
-                "project_version": "0.16.5",
-                "package_name": "dummy_package",
+    _write_toml(
+        pyproject_toml,
+        {
+            "tool": {
+                "kedro": {
+                    "package_name": "dummy_package",
+                    "project_name": "dummy_package",
+                    "project_version": "0.17.0",
+                }
             }
-        ),
+        },
     )
 
     os.mkdir(tmp_path / "src")
@@ -84,20 +92,13 @@ def config_dir(tmp_path):
     with open(tmp_path / "src" / "dummy_package" / "run.py", "w") as f:
         f.writelines(
             [
-                "from kedro.framework.context import KedroContext\n",
-                "from kedro.config import TemplatedConfigLoader \n"
-                "class ProjectContext(KedroContext):\n",
-                "    project_name = 'dummy_package'\n",
-                "    project_version = '0.16.5'\n",
-                "    package_name = 'dummy_package'\n",
-            ]
-        )
-        f.writelines(
-            [
-                "    def _create_config_loader(self, conf_paths):\n",
-                "        return TemplatedConfigLoader(\n",
-                "        conf_paths,\n",
-                "        globals_pattern='globals.yml'\n",
-                "        )\n",
+                "from pathlib import Path\n",
+                "from kedro.framework.session import KedroSession\n",
+                "def run_package():\n",
+                "    package_name = Path(__file__).resolve().parent.name\n",
+                "    with KedroSession.create(package_name) as session:\n",
+                "        session.run()\n",
+                "if __name__ == '__main__':",
+                "    run_package()",
             ]
         )
