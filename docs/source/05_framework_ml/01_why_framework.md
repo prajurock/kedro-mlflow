@@ -78,7 +78,8 @@ This is a **cyclic** development process based on a **stochastic** behaviour of 
 We will focus on machine learning *development* lifecycle. As a consequence, these items are out of scope:
 
 - Orchestration
-- Issues related to infrastructure (the 3 first items of above list: scalability and cost control, speed, disponibility and resilience)
+- Issues related to infrastructure (related, but not limited to, the 3 first items of above list: scalability and cost control, inference speed, disponibility and resilience)
+- Issues related to model monitoring: Data distribution changes over time, model decay, data access...
 
 ### Issue 1: The training process is poorly reproducible
 
@@ -88,11 +89,9 @@ The main reason which explains why training is hard to reproduce is the iterativ
 
 Note that there is also a lot of "innate" randomness in ML pipelines and if a seed is not set explictly as a parameter , the run will likely not be reproducible (separation train/test/validation, moving underlying data sources, random initialisation for optimizers, random split for bootstrap...).
 
-#### The data scientist and stakeholders focus on training
+#### Issue 2: The data scientist and stakeholders focus on training
 
-While building the ML model, the inference pipeline is often completely ignored by the data scientist.
-
-The best example are Kaggle competitions where a very common workflow is the following:
+While building the ML model, the inference pipeline is often completely ignored by the data scientist. The best example are Kaggle competitions where a very common workflow is the following:
 
 - merge the training and the test data at the beginning of their script
 - do the preprocessing on the entire dataset
@@ -102,32 +101,32 @@ The best example are Kaggle competitions where a very common workflow is the fol
 - anayze their metrics, finetune their hyper parameters
 - submit their predictions as data (i.e. as a file) to Kaggle
 
-The very important issue which arises with such a workflow is that **you completely ignore the non reproducibility which arises from the preprocessing (encoding, randomness...)**.  Most Kaggle solutions are never tested on an end to end basis, i.e. by running the inference pipeline from the test data input file to the predictions file. This facilitates very bad coding practices and teaches beginner data scientists bad software engineering practice.
+The very important issue which arises with such a workflow is that **you completely ignore the non reproducibility which arises from the preprocessing (encoding, randomness...)**. Most Kaggle solutions are never tested on an end to end basis, i.e. by running the inference pipeline from the test data input file to the predictions file. This facilitates very bad coding practices and teaches beginner data scientists bad software engineering practice.
 
-`kedro-mlflow` enable to log the inference pipeline as a Mlflow Model (through a `KedroPipelineModel` class) to ensure that you deploy the inference pipeline as a whole.
+> `kedro-mlflow` enables to log the inference pipeline as a Mlflow Model (through a `KedroPipelineModel` class) to ensure that you deploy the inference pipeline as a whole.
 
-#### Inference and training are entirely decoupled
+#### Issue 3: Inference and training are entirely decoupled
 
-As stated previous paragraph,
+As stated previous paragraph, the inference pipeline is not a primary concern when experimenting and developing your model. This raises strong reproducibility issues. Assume that you have logged the model and all its parameters when training (which is a good point!), you will still need to retrieve the code used during training to create the inference pipeline. This is in my experience quite difficult:
 
-- nobody cares about inference before deployment (cf previous paragraph)
-- This is where difficulty arise for the data scientist
+- in the best case, you have trained the model from a git sha which is logged in mlflow. Any potential user can (but it takes time) recreate the exact inference pipeline from your source code, and retrieve all necessary artifacts from mlflow. This is tedious, error prone, and gives a lot of responsibility and work to your end user, but at least it makes your model usable.
+- most likely, you did not train your model from a version control commit. While experimenting /debug, it is very common to modify the code and retrain without committing. The exact code associated to a given model will likely be impossible to find out later.  
 
-As a consequence, data scientists deploy models (trained) rather than pipelines, e.g. a zip and a very long & obfuscated script which do a lot of poorly related things (both data visualisation, training, inference, extra statistical analysis...)
+> `kedro-mlflow` offers a `PipelineML` (and its helpers `pipeline_ml_factory`) class which binds the `training` and `inference` pipeline, and a hook which autolog such pipelines when they are run. This enables data scientists to ensure that each training model is logged with its associated inference pipeline, and is ready to use for any end user. This decreases a lot the necessary cognitive complexity to ensure coherence between training and inference.
 
-This makes everything 1) very hard to modify 2) very hard to correct 3) very long to deploy beacause there are a lot of manual tests
+#### Issue 4: Data scientists do not handle business objects
 
+It is often said that data scientists deliver machine learning *models*. This assumes that all the preprocessing will be recoded the end user of your model. This is a major cause of poor adoption of your model in an enterprise setup because it makes your model:
 
-#### data scientists do not deliver pipelines, and consequently do not handle business objects
+- hard to use (developments are need on the client side)
+- hard to update (it needs code update from the end user)
+- very error prone (never trust the client!)
 
-scenario: movie review
-The data scientist imagine that someone will deliver a one hot encoded matrix with the dictionary he has defined!!
+If you struggle representing it, imagine that you have developed a NLP model. Would you really ask your end user to give you a one-hot encoded matrix or BERT-tokenized texts with your custom embbeddings and vocabulary?
 
-> Lots of recoding, hardly possible to modify, high operational risk, cannot update the model
+Your model must handle business objects (e.g. a mail, a movie review, a customer with its characteristic, a raw image...) to be usable.
 
-#### Many other problems not addressed here
-
-Latency, data underlying distribution over time, model decay, data access...
+> Kedro `Pipeline`'s are able to handle processing from the business object to the prediction. Your real model must be a `Pipeline`, and the `KedroPipelineModel` of `kedro-mlflow` helps to store them and log them in mlflow. Additionally, `kedro-mlflow` suggests how your project should be organized in "apps" to make this transition easy.
 
 ### Overcoming these problems: support an organisational solution with an efficient tool
 
