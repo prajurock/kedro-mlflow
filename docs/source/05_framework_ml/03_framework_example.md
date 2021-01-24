@@ -32,7 +32,7 @@ The DAG looks like this:
 
 ![etl_app](../imgs/etl_app.png)
 
-Where the "huggingface_split" parameter is just here to define if we should produce "training" or " data. We persist the `instances` and `labels` in the DataCatalog for further reuse:
+Where the "huggingface_split" parameter is just here to define if we should produce "training" or "test" data. We persist the `instances` and `labels` in the DataCatalog for further reuse:
 
 ```yaml
 # catalog.yml
@@ -49,14 +49,71 @@ labels:
 
 ### The ml_app
 
-Once the instances and labels have been created with the *etl_app*, we can launch the ml pipelines.
+Once the instances and labels have been created with the *etl_app*, we can create and launch the machine learning training and inference pipelines. The inference pipeline is the one you will deploy for your end users.
 
 #### A vanilla example: training a machine learning model
 
-The most basic project we can imagine is the following: the business object is a numeric matrix, and we want to train our model on it.
+The most basic project we can imagine is the following: the business object "instances" is a numeric matrix, and we can directely train a model on it.
+
+The entire pipeline is:
+
+```python
+# pipeline.py
+def create_ml_pipeline_vanilla(**kwargs):
+    """This pipeline is just an example to generate a kedro viz.
+    It is NOT intended to be used directly.
+    """
+
+    return Pipeline(
+        [
+            node(
+                func=train_model,
+                inputs=dict(
+                    data="instances", hyperparameters="params:xgb_hyperparameters",
+                ),
+                outputs="model",
+                tags=["training"],
+            ),
+            node(
+                func=predict_with_model,
+                inputs=dict(model="model", data="instances"),
+                outputs="predictions",
+                tags=["inference"],
+            ),
+        ]
+    )
+```
+
+with the associated graph:
+
+![ml_pipeline_vanilla](../imgs/ml_pipeline_vanilla.png)
+
+You can **filter the pipeline to separate it between training and inference with efficient node reuse**.
+
+| `pipeline.only_nodes_with_tags("training")`      | `pipeline.only_nodes_with_tags("inference")` |
+| ----------- | ----------- |
+| ![ml_pipeline_vanilla_training](../imgs/ml_pipeline/vanilla/training.png)| ![ml_pipeline_vanilla_inference](../imgs/ml_pipeline/vanilla/inference.png)|
+
+Running the `training` pipeline will create the model, and if it is persisted in the `catalog.yml` file, youwill be able to run the infrence pipeline.
+
+> This example is nice, but not realistic. It is extremely rare to train a model directly on raw data. It would be convenient to be able to add a preprocessing node, wouldn't it ? This is the purpose of the next session.
 
 #### Sharing preprocessing: text cleaning example
 
+Asssume you want to add an extra preprocessing node before training the model. The previous entire DAG would look like this:
+
+![ml_pipeline_with_preprocessing](../imgs/ml_pipeline/preprocessing/all.png)|
+
+
+You can once again filter this huge pipeline to separate it between `training` and `inference`. **Since you do not duplicate nodes, this ensure consistency because you are absolutely sure you call the exact same functions** in the two pipelines.
+
+| `pipeline.only_nodes_with_tags("training")`      | `pipeline.only_nodes_with_tags("inference")` |
+| ----------- | ----------- |
+| ![ml_pipeline_preprocessing_training](../imgs/ml_pipeline/preprocessing/training.png)| ![ml_pipeline_preprocessing_inference](../imgs/ml_pipeline/preprocessing/inference.png)|
+
+You want to serve the entire inference pipleine (extra preprocessing included) to your end users, and this is exactly what we are going to do here!
+
+> Wait! In real life, it is often more complex: preproessing is often not declared manually through a function but also fitted on data
 #### Reusing data objects: the example of OneHotEncoder
 
 #### Reusing shared inputs: the example of stopwords
